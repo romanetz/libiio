@@ -1,0 +1,22 @@
+#!/bin/sh -xe
+
+. CI/travis/lib.sh
+
+is_deployable_travis_ci_run || exit 0
+
+# These Travis-CI vars have to be non-empty
+[ -n "$TRAVIS_PULL_REQUEST" ] || exit 0
+[ -n "$TRAVIS_BRANCH" ] || exit 0
+[ -n "$TRAVIS_API_TOKEN" ] || exit 0
+
+# Has to be a non-pull-request
+[ "$TRAVIS_PULL_REQUEST" = "false" ] || exit 0
+
+pipeline_branch "$TRAVIS_BRANCH" || exit 0
+
+jobs_cnt=$(python CI/travis/jobs_running_cnt.py)
+
+# Trigger next job if we are the last job running
+[ "$jobs_cnt" == "1" ] || exit 0
+
+trigger_adi_build "libad9361-iio" "$TRAVIS_BRANCH"
